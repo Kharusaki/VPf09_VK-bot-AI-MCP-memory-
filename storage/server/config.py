@@ -36,6 +36,20 @@ def _path(name: str, default: str) -> Path:
     return path if path.is_absolute() else BASE_DIR / path
 
 
+def _http_path(name: str, default: str) -> str:
+    """Путь эндпоинта в URL.
+
+    Git Bash на Windows молча подменяет «/mcp» на «C:/Program Files/Git/mcp»,
+    из-за чего сервер стартует на мёртвом адресе. Оставляем только короткий
+    сегмент, остальное считаем порчей окружения и берём значение по умолчанию.
+    """
+    raw = _str(name, default) or default
+    candidate = "/" + raw.strip().strip("/")
+    if any(char in candidate for char in " \\:"):
+        return default
+    return candidate
+
+
 @dataclass(frozen=True, slots=True)
 class ServerSettings:
     """Параметры HTTP-транспорта и каталога с JSON-файлами."""
@@ -56,9 +70,7 @@ def load_server_settings() -> ServerSettings:
     """Собрать настройки MCP-сервера из окружения."""
     host = _str("MCP_HOST", "127.0.0.1")
     port = _int("MCP_PORT", 8765)
-    path = _str("MCP_PATH", "/mcp")
-    if not path.startswith("/"):
-        path = "/" + path
+    path = _http_path("MCP_PATH", "/mcp")
 
     return ServerSettings(
         host=host,
