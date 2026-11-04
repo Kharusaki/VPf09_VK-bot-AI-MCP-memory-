@@ -6,12 +6,27 @@ from vkbottle.bot import BotLabeler, Message
 from vkbottle.dispatch.rules.base import CommandRule, RegexRule, StateRule
 
 from config import texts
-from keyboards.main import DIALOGS, HELP, MODES, NEW_DIALOG, SETTINGS, main_menu
+from keyboards.main import (
+    DIALOGS,
+    HELP,
+    MODES,
+    NEW_DIALOG,
+    RAG_STATUS,
+    SETTINGS,
+    main_menu,
+)
 from utils.errors import DialogLimitError
 
 from ..rules import text_in
 from ..runtime import AppContext
-from ..views import show_dialogs, show_help, show_main, show_modes, show_settings
+from ..views import (
+    show_dialogs,
+    show_help,
+    show_main,
+    show_modes,
+    show_rag_status,
+    show_settings,
+)
 from .helpers import profile_for
 
 
@@ -66,6 +81,10 @@ def register(labeler: BotLabeler, ctx: AppContext) -> None:
     @labeler.private_message(StateRule(None), text_in(HELP))
     async def help_button(message: Message) -> None:
         await show_help(ctx, message)
+
+    @labeler.private_message(StateRule(None), text_in(RAG_STATUS))
+    async def rag_status(message: Message) -> None:
+        await show_rag_status(ctx, message)
 
     @labeler.private_message(StateRule(None), RegexRule(r"^/\S+"))
     async def unknown_command(message: Message) -> None:

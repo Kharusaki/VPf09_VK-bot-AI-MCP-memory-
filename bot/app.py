@@ -18,6 +18,7 @@ from services.context_builder import ContextBuilder
 from services.dialog_service import DialogService
 from services.memory_service import MemoryService
 from services.messaging import MessagingService
+from services.rag_service import RAGService
 from services.retry_store import RetryStore
 from storage.client.repository import StorageRepository
 from utils.errors import StorageError
@@ -52,6 +53,10 @@ def build_app(settings: Settings, storage: StorageRepository) -> tuple[Bot, AppC
     )
     dialogs = DialogService(storage=storage, settings=settings)
     ai = AIService(settings=settings)
+    rag = RAGService(settings=settings)
+    if settings.rag_enabled:
+        rag.load()
+
     chat = ChatService(
         storage=storage,
         dialogs=dialogs,
@@ -59,6 +64,7 @@ def build_app(settings: Settings, storage: StorageRepository) -> tuple[Bot, AppC
         context=context,
         ai=ai,
         settings=settings,
+        rag=rag,
     )
 
     ctx = AppContext(
@@ -71,6 +77,7 @@ def build_app(settings: Settings, storage: StorageRepository) -> tuple[Bot, AppC
         retry=RetryStore(),
         chat=chat,
         messaging=MessagingService(api, settings),
+        rag=rag,
         bot=bot,
     )
 

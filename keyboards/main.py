@@ -9,6 +9,7 @@ DIALOGS = "📂 Мои диалоги"
 SETTINGS = "⚙️ Настройки"
 MODES = "🎭 Сменить режим"
 HELP = "❓ Помощь"
+RAG_STATUS = "📚 База знаний"
 
 MENU_LABELS = (NEW_DIALOG, DIALOGS, SETTINGS, MODES, HELP)
 
@@ -24,3 +25,36 @@ def main_menu() -> Keyboard:
     keyboard.add(Text(MODES), KeyboardButtonColor.PRIMARY)
     keyboard.add(Text(HELP), KeyboardButtonColor.SECONDARY)
     return keyboard
+
+
+def main_menu_with_rag() -> Keyboard:
+    """Главная клавиатура с кнопкой базы знаний (RAG включён)."""
+    keyboard = main_menu()
+    keyboard.row()
+    keyboard.add(Text(RAG_STATUS), KeyboardButtonColor.PRIMARY)
+    return keyboard
+
+
+__all__ = (
+    "DIALOGS",
+    "HELP",
+    "MENU_LABELS",
+    "MODES",
+    "NEW_DIALOG",
+    "RAG_STATUS",
+    "SETTINGS",
+    "main_menu",
+    "main_menu_with_rag",
+)
+
+
+__all__ = (
+    "DIALOGS",
+    "HELP",
+    "MENU_LABELS",
+    "MODES",
+    "NEW_DIALOG",
+    "RAG_STATUS",
+    "SETTINGS",
+    "main_menu",
+)

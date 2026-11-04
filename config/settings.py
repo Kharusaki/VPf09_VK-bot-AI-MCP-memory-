@@ -77,6 +77,10 @@ class Settings:
     max_output_tokens: int
     request_timeout: float
 
+    embedding_model: str
+    rag_top_k: int
+    rag_enabled: bool
+
     mcp_host: str
     mcp_port: int
     mcp_path: str
@@ -145,6 +149,10 @@ def load_settings() -> Settings:
     max_dialogs = min(max(_int("MAX_DIALOGS", 20), 1), 100)
     max_message_chars = min(max(_int("MAX_MESSAGE_CHARS", 3800), 500), 4000)
 
+    embedding_model = _str("EMBEDDING_MODEL", "openai/text-embedding-3-small")
+    rag_top_k = min(max(_int("RAG_TOP_K", 5), 1), 10)
+    rag_enabled = _str("RAG_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+
     return Settings(
         vk_group_token=token,
         vk_group_id=_optional_int("VK_GROUP_ID"),
@@ -158,6 +166,9 @@ def load_settings() -> Settings:
         temperature=temperature,
         max_output_tokens=max_output_tokens,
         request_timeout=max(5.0, _float("REQUEST_TIMEOUT", 90.0)),
+        embedding_model=embedding_model,
+        rag_top_k=rag_top_k,
+        rag_enabled=rag_enabled,
         mcp_host=host,
         mcp_port=port,
         mcp_path=path,

@@ -90,7 +90,7 @@ def register(labeler: BotLabeler, ctx: AppContext) -> None:
             await retry_last(ctx, event)
 
         elif command == "noop":
-            await event.send_empty_answer()
+            await event.show_snackbar(texts.CALLBACK_EXPIRED_TEXT)
 
         else:
             await event.show_snackbar(texts.CALLBACK_EXPIRED_TEXT)

@@ -22,7 +22,7 @@ from config.texts import (
     start_text,
 )
 from keyboards.dialogs import dialogs_keyboard, page_count
-from keyboards.main import main_menu
+from keyboards.main import main_menu, main_menu_with_rag
 from keyboards.modes import modes_keyboard
 from keyboards.settings import settings_keyboard
 from models.dialog import Dialog
@@ -107,7 +107,8 @@ async def show_main(
     target: Message | MessageEvent,
     profile: UserProfile,
 ) -> None:
-    await answer_screen(ctx, target, start_text(profile), main_menu())
+    keyboard = main_menu_with_rag() if (ctx.settings.rag_enabled and ctx.rag and ctx.rag.chunk_count) else main_menu()
+    await answer_screen(ctx, target, start_text(profile), keyboard)
 
 
 async def show_help(ctx: AppContext, target: Message | MessageEvent) -> None:
@@ -168,3 +169,44 @@ async def show_dialog_actions(
         "Выберите действие."
     )
     await edit_event(event, text, dialog_actions_keyboard(dialog.id))
+
+
+async def show_rag_status(
+    ctx: AppContext,
+    target: Message | MessageEvent,
+) -> None:
+    if not ctx.rag:
+        await answer_screen(ctx, target, "RAG-контейнер отключён.", main_menu())
+        return
+
+    count = ctx.rag.chunk_count
+    if count == 0:
+        await answer_screen(
+            ctx,
+            target,
+            "📚 База знаний пуста.\n\n"
+            "Чтобы наполнить её:\n"
+            "1. Положите файлы (.txt, .md, .pdf) в каталог data/rag/sources\n"
+            "2. Запустите: python scripts/rag_index.py\n"
+            "3. Перезапустите бота\n\n"
+            "Или используйте CLI:\n"
+            "  python scripts/rag_index.py --add <файл>\n"
+            "  python scripts/rag_index.py --status",
+            main_menu(),
+        )
+        return
+
+    sources = {chunk.source for chunk in ctx.rag.chunks}
+    await answer_screen(
+        ctx,
+        target,
+        f"📚 База знаний\n\n"
+        f"Чанков в индексе: {count}\n"
+        f"Источников: {len(sources)}\n\n"
+        "Бот отвечает на вопросы, опираясь на содержимое файлов.\n"
+        "Чтобы обновить базу — запустите:\n"
+        "  python scripts/rag_index.py\n\n"
+        "Или добавьте файлы:\n"
+        "  python scripts/rag_index.py --add <файл>",
+        main_menu(),
+    )

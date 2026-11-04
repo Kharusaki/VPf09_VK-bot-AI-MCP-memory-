@@ -12,6 +12,7 @@ from services.context_builder import ContextBuilder
 from services.dialog_service import DialogService
 from services.memory_service import MemoryService
 from services.messaging import MessagingService
+from services.rag_service import RAGService
 from services.retry_store import RetryStore
 from storage.client.repository import StorageRepository
 
@@ -29,6 +30,7 @@ class AppContext:
     retry: RetryStore
     chat: ChatService
     messaging: MessagingService
+    rag: RAGService
     bot: Any = None
     display_names: dict[int, str] = field(default_factory=dict)
 
