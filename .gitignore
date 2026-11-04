@@ -18,6 +18,7 @@ venv/
 # Runtime-данные
 data/users/*.json
 data/users/*.corrupt-*.json
+data/users/rag/
 data/*.log
 data/*.tmp
 .vkbottle/
@@ -28,3 +29,4 @@ Thumbs.db
 
 # Учебные документы
 *.docx
+test_token.py
