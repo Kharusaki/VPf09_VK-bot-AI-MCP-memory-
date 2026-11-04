@@ -1,0 +1,7 @@
+# --- Runtime ---
+mcp>=1.30,<2
+httpx>=0.27,<1
+vkbottle>=4.11,<5
+google-genai>=2.0,<3
+openai>=3.0,<4
+python-dotenv>=1.0,<2

@@ -1,0 +1,30 @@
+# Секреты
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Виртуальное окружение
+venv/
+.venv/
+
+# Runtime-данные
+data/users/*.json
+data/users/*.corrupt-*.json
+data/*.log
+data/*.tmp
+.vkbottle/
+
+# ОС
+Thumbs.db
+.DS_Store
+
+# Учебные документы
+*.docx
