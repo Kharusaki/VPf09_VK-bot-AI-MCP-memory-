@@ -107,7 +107,7 @@ def _status(rag: RAGService, sources_dir: Path) -> None:
         for source in sorted(sources):
             print(f"  • {source}")
     else:
-        print("Индекс пусть — прогоните: python scripts/rag_index.py --add <файл>")
+        print("Индекс пуст — прогоните: python scripts/rag_index.py")
 
 
 async def main() -> int:
@@ -130,7 +130,7 @@ async def main() -> int:
         print(f"Ошибка конфигурации: {exc}")
         return 1
 
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_file)
     rag = RAGService(settings)
     sources_dir = args.sources or (rag.rag_dir / "sources")
 
