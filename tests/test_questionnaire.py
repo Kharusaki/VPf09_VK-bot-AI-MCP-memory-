@@ -9,6 +9,7 @@ from models.questionnaire import (
     DEFAULT_VALUE,
     PROFILE_KEYS,
     extract_profile,
+    is_profile_complete,
     looks_like_profile,
     normalize_profile,
     strip_json_blocks,
@@ -77,6 +78,24 @@ def test_looks_like_profile_needs_several_fields() -> None:
 def test_strip_json_blocks_removes_service_block() -> None:
     text = "Реплика\n```json\n{}\n```"
     assert strip_json_blocks(text) == "Реплика"
+
+
+def test_profile_is_complete_when_all_fields_answered() -> None:
+    assert is_profile_complete(SAMPLE) is True
+
+
+def test_profile_is_incomplete_when_field_not_asked() -> None:
+    partial = dict(SAMPLE)
+    partial["contact_info"] = DEFAULT_VALUE
+
+    assert is_profile_complete(partial) is False
+
+
+def test_explicit_skips_count_as_answers() -> None:
+    skipped = {key: "не знаю" for key in PROFILE_KEYS}
+    skipped["contact_info"] = "пропущено"
+
+    assert is_profile_complete(skipped) is True
 
 
 def test_load_source_accepts_ready_bot_json(tmp_path: Path) -> None:

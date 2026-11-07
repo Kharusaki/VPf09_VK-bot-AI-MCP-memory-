@@ -151,6 +151,23 @@ async def test_set_mode_changes_only_active_dialog(service) -> None:
     assert profile.active_dialog_id == second.id
 
 
+async def test_questionnaire_mode_remembers_and_clears_previous_mode(service) -> None:
+    dialogs, _ = service
+    profile = await dialogs.get_profile(1)
+    dialog = profile.dialogs[0]
+
+    dialogs.set_mode(profile, Mode.BUSINESS, dialog.id)
+    dialogs.set_mode(profile, Mode.QUESTIONNAIRE, dialog.id)
+
+    assert dialog.mode is Mode.QUESTIONNAIRE
+    assert dialog.previous_mode is Mode.BUSINESS
+
+    dialogs.set_mode(profile, Mode.ASSISTANT, dialog.id)
+
+    assert dialog.mode is Mode.ASSISTANT
+    assert dialog.previous_mode is None
+
+
 async def test_get_profile_repairs_missing_active_dialog(service) -> None:
     dialogs, storage = service
     profile = await dialogs.get_profile(1)

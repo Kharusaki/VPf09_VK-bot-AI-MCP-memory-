@@ -35,6 +35,7 @@ class FakeStorage:
     def __init__(self, profile: UserProfile) -> None:
         self.profile = profile
         self.questionnaire: dict[str, Any] | None = None
+        self.lead: dict[str, Any] | None = None
 
     async def load_user(self, user_id: int) -> UserProfile:
         return self.profile
@@ -46,6 +47,10 @@ class FakeStorage:
         self.questionnaire = kwargs
         return {"ok": True, "file": "anketa_1_dialog-1.json"}
 
+    async def create_lead(self, **kwargs: Any) -> dict[str, Any]:
+        self.lead = kwargs
+        return {"ok": True, "file": "lead_1.json"}
+
 
 class FakeAI:
     def __init__(self, text: str) -> None:
@@ -55,7 +60,10 @@ class FakeAI:
         return AIResult(text=self.text, model="test-model", fallback_used=False)
 
 
-def _profile(mode: Mode = Mode.QUESTIONNAIRE) -> UserProfile:
+def _profile(
+    mode: Mode = Mode.QUESTIONNAIRE,
+    previous_mode: Mode | None = None,
+) -> UserProfile:
     now = utc_now()
     dialog = Dialog(
         id="dialog-1",
@@ -63,6 +71,7 @@ def _profile(mode: Mode = Mode.QUESTIONNAIRE) -> UserProfile:
         mode=mode,
         created_at=now,
         updated_at=now,
+        previous_mode=previous_mode,
     )
     return UserProfile(
         user_id=1,
@@ -131,3 +140,54 @@ async def test_non_questionnaire_mode_keeps_text_as_is() -> None:
 
     assert result.text == answer
     assert storage.questionnaire is None
+    assert storage.lead is None
+
+
+async def test_lead_phrase_creates_lead_and_starts_questionnaire() -> None:
+    partial = {
+        "student_name": "Артём",
+        "current_level": "A2",
+        "learning_goal": "Разговорный английский",
+    }
+    answer = (
+        "Здравствуйте! Как вас зовут?\n\n"
+        "```json\n" + json.dumps(partial, ensure_ascii=False) + "\n```"
+    )
+    chat, storage = _chat(_profile(Mode.ASSISTANT), answer)
+
+    result = await chat.reply(1, "Тест", "Хочу записаться на пробный урок")
+
+    assert storage.lead is not None
+    assert storage.lead["message"] == "Хочу записаться на пробный урок"
+    assert storage.lead["dialog_id"] == "dialog-1"
+
+    dialog = storage.profile.active_dialog
+    assert dialog is not None
+    assert dialog.mode is Mode.QUESTIONNAIRE
+    assert dialog.previous_mode is Mode.ASSISTANT
+    assert result.mode is Mode.QUESTIONNAIRE
+    assert result.text.startswith("✅ Заявка создана.")
+    assert storage.questionnaire is not None
+
+
+async def test_completed_questionnaire_returns_previous_mode() -> None:
+    answer = (
+        "Спасибо, всё записал!\n\n"
+        "```json\n" + json.dumps(SAMPLE, ensure_ascii=False) + "\n```"
+    )
+    chat, storage = _chat(
+        _profile(Mode.QUESTIONNAIRE, previous_mode=Mode.BUSINESS),
+        answer,
+    )
+
+    result = await chat.reply(1, "Тест", "Да, всё верно")
+
+    assert result.mode is Mode.BUSINESS
+    dialog = storage.profile.active_dialog
+    assert dialog is not None
+    assert dialog.mode is Mode.BUSINESS
+    assert dialog.previous_mode is None
+    assert result.text.startswith("Спасибо, всё записал!")
+    assert result.text.endswith(
+        "✅ Анкета заполнена. Возвращаю режим: 💼 Бизнес-консультант."
+    )

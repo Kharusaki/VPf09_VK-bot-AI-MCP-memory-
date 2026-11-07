@@ -20,6 +20,7 @@ data/users/*.json
 data/users/*.corrupt-*.json
 data/users/rag/
 data/questionnaires/
+data/leads/
 reports/
 data/*.log
 data/*.tmp

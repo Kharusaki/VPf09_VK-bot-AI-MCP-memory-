@@ -58,6 +58,7 @@ def server(tmp_path: Path):
             "MCP_PATH": "/mcp",
             "DATA_DIR": str(data_dir),
             "QUESTIONNAIRE_DIR": str(tmp_path / "questionnaires"),
+            "LEAD_DIR": str(tmp_path / "leads"),
             "LOG_LEVEL": "WARNING",
             "PYTHONUNBUFFERED": "1",
         }
@@ -160,6 +161,21 @@ async def test_mcp_storage_end_to_end(server) -> None:
         assert questionnaire["contact_info"] == "не указано"
         assert questionnaire["user_id"] == 777
         assert questionnaire["dialog_title"] == "Анкета"
+
+        lead = await repository.create_lead(
+            user_id=777,
+            display_name="Тестовый пользователь",
+            dialog_id="dialog-1",
+            dialog_title="Заявка",
+            message="Хочу записаться на пробный урок",
+        )
+        assert lead["ok"] is True
+        lead_path = Path(lead["path"])
+        assert lead_path.exists()
+        lead_payload = json.loads(lead_path.read_text(encoding="utf-8"))
+        assert lead_payload["user_id"] == 777
+        assert lead_payload["status"] == "new"
+        assert lead_payload["message"] == "Хочу записаться на пробный урок"
 
         await repository.delete_user(777)
         assert await repository.load_user(777) is None

@@ -22,6 +22,7 @@ class Dialog:
     created_at: str
     updated_at: str
     messages: list[ChatMessage] = field(default_factory=list)
+    previous_mode: Mode | None = None
 
     @property
     def message_count(self) -> int:
@@ -37,6 +38,10 @@ class Dialog:
                 for item in raw_messages
                 if isinstance(item, Mapping)
             ]
+        raw_previous = data.get("previous_mode")
+        previous_mode = (
+            Mode.from_value(raw_previous) if raw_previous else None
+        )
         return cls(
             id=str(data.get("id") or ""),
             title=str(data.get("title") or "Диалог"),
@@ -44,6 +49,7 @@ class Dialog:
             created_at=str(data.get("created_at") or "") or utc_now(),
             updated_at=str(data.get("updated_at") or "") or utc_now(),
             messages=messages,
+            previous_mode=previous_mode,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -51,6 +57,9 @@ class Dialog:
             "id": self.id,
             "title": self.title,
             "mode": self.mode.value,
+            "previous_mode": (
+                self.previous_mode.value if self.previous_mode is not None else None
+            ),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "messages": [message.to_dict() for message in self.messages],

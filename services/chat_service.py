@@ -15,12 +15,24 @@ from dataclasses import dataclass
 
 from config.prompts import build_system_prompt
 from config.settings import Settings
-from config.texts import QUESTIONNAIRE_SAVE_ERROR_TEXT, QUESTIONNAIRE_SAVED_TEXT
+from config.texts import (
+    LEAD_CREATED_TEXT,
+    QUESTIONNAIRE_SAVE_ERROR_TEXT,
+    QUESTIONNAIRE_SAVED_TEXT,
+    questionnaire_completed_text,
+)
+from models.dialog import Dialog
 from models.enums import MessageRole, Mode
-from models.questionnaire import extract_profile, strip_json_blocks
+from models.questionnaire import (
+    extract_profile,
+    is_profile_complete,
+    strip_json_blocks,
+)
+from models.user import UserProfile
 from services.ai_service import AIService
 from services.context_builder import ContextBuilder
 from services.dialog_service import DialogService
+from services.lead_intent import detect_lead_intent
 from services.memory_service import MemoryService
 from services.rag_service import RAGService
 from storage.client.repository import StorageRepository
@@ -85,6 +97,12 @@ class ChatService:
             if dialog is None:
                 raise ValueError("У пользователя нет активного диалога")
 
+            lead_created = False
+            if dialog.mode is not Mode.QUESTIONNAIRE and detect_lead_intent(message):
+                lead_created = await self._start_questionnaire(
+                    profile, dialog, user_id, display_name, message
+                )
+
             self.memory.append(dialog, MessageRole.USER, message)
             context = self.context.build(dialog)
             if not context:
@@ -102,6 +120,7 @@ class ChatService:
 
             visible_text = result.text
             questionnaire_file: str | None = None
+            returned_mode: Mode | None = None
             if dialog.mode is Mode.QUESTIONNAIRE:
                 visible_text, questionnaire = extract_profile(result.text)
                 if questionnaire is not None:
@@ -115,6 +134,15 @@ class ChatService:
                         )
                         questionnaire_file = str(saved.get("file") or "")
                         visible_text = visible_text or QUESTIONNAIRE_SAVED_TEXT
+                        if (
+                            questionnaire_file
+                            and dialog.previous_mode is not None
+                            and is_profile_complete(questionnaire)
+                        ):
+                            returned_mode = dialog.previous_mode
+                            self.dialogs.set_mode(
+                                profile, returned_mode, dialog.id
+                            )
                     except StorageError as exc:
                         logger.error(
                             "Не удалось сохранить анкету пользователя %s: %s",
@@ -126,6 +154,14 @@ class ChatService:
                     # Модель иногда забывает обёртку или формат. Не показываем
                     # пользователю сырой служебный блок в любом случае.
                     visible_text = strip_json_blocks(result.text) or result.text
+
+            if lead_created:
+                visible_text = f"{LEAD_CREATED_TEXT}\n\n{visible_text}".strip()
+            if returned_mode is not None:
+                visible_text = (
+                    f"{visible_text}\n\n"
+                    f"{questionnaire_completed_text(returned_mode.label)}"
+                ).strip()
 
             self.memory.append(dialog, MessageRole.ASSISTANT, visible_text)
             await self.dialogs.save(profile)
@@ -149,6 +185,42 @@ class ChatService:
                 message_count=dialog.message_count,
                 questionnaire_file=questionnaire_file,
             )
+
+    async def _start_questionnaire(
+        self,
+        profile: UserProfile,
+        dialog: Dialog,
+        user_id: int,
+        display_name: str,
+        message: str,
+    ) -> bool:
+        """Создать заявку и переключить диалог в режим анкетирования."""
+        lead_created = False
+        try:
+            saved = await self.storage.create_lead(
+                user_id=int(user_id),
+                display_name=display_name,
+                dialog_id=dialog.id,
+                dialog_title=dialog.title,
+                message=message,
+            )
+            lead_created = True
+            logger.info(
+                "Заявка пользователя %s создана: %s",
+                user_id,
+                saved.get("file") or saved.get("path") or "",
+            )
+        except StorageError as exc:
+            logger.error(
+                "Не удалось создать заявку пользователя %s: %s",
+                user_id,
+                exc,
+            )
+        self.dialogs.set_mode(profile, Mode.QUESTIONNAIRE, dialog.id)
+        # Режим и заявка сохраняются сразу: если AI в этом ходе упадёт,
+        # повторный запрос не создаст дубликат заявки.
+        await self.dialogs.save(profile)
+        return lead_created
 
 
 def _format_rag_context(chunks) -> str:

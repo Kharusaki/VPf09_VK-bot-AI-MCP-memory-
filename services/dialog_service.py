@@ -159,6 +159,10 @@ class DialogService:
         dialog = profile.find_dialog(target_id)
         if dialog is None:
             raise DialogNotFoundError("Диалог не найден")
+        if mode is Mode.QUESTIONNAIRE and dialog.mode is not Mode.QUESTIONNAIRE:
+            dialog.previous_mode = dialog.mode
+        elif mode is not Mode.QUESTIONNAIRE:
+            dialog.previous_mode = None
         dialog.mode = mode
         dialog.updated_at = utc_now()
         profile.updated_at = dialog.updated_at

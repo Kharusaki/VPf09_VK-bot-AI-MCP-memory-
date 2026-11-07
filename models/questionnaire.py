@@ -103,11 +103,23 @@ def strip_json_blocks(text: str) -> str:
     return _FENCED_JSON.sub("", text).strip()
 
 
+def is_profile_complete(data: Mapping[str, Any]) -> bool:
+    """Заполнены ли все поля анкеты.
+
+    Поле считается заполненным, если модель записала в него хоть что-то:
+    явные «не знаю», «не помню» и «пропущено» тоже считаются ответом.
+    Незаполненным остаётся только служебное «не указано».
+    """
+    normalized = normalize_profile(data)
+    return all(value != DEFAULT_VALUE for value in normalized.values())
+
+
 __all__ = (
     "DEFAULT_VALUE",
     "PROFILE_FIELDS",
     "PROFILE_KEYS",
     "extract_profile",
+    "is_profile_complete",
     "looks_like_profile",
     "normalize_profile",
     "strip_json_blocks",

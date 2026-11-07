@@ -68,6 +68,26 @@ class StorageRepository:
             },
         )
 
+    async def create_lead(
+        self,
+        user_id: int,
+        display_name: str,
+        dialog_id: str,
+        dialog_title: str,
+        message: str,
+    ) -> dict[str, Any]:
+        """Создать заявку на обучение отдельным JSON-файлом."""
+        return await self.client.call_tool(
+            "save_lead",
+            {
+                "user_id": int(user_id),
+                "display_name": str(display_name),
+                "dialog_id": str(dialog_id),
+                "dialog_title": str(dialog_title),
+                "message": str(message),
+            },
+        )
+
     async def list_user_ids(self) -> list[int]:
         payload = await self.client.call_tool("list_users", {})
         raw = payload.get("user_ids")

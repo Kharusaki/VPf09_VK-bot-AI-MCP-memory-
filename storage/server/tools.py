@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .app import mcp, questionnaire_store, repository
+from .app import lead_store, mcp, questionnaire_store, repository
 
 logger = logging.getLogger(__name__)
 
@@ -97,4 +97,29 @@ async def save_questionnaire(
     except Exception as exc:
         logger.exception("Не удалось сохранить анкету пользователя %s", user_id)
         return {"ok": False, "error": f"Не удалось сохранить анкету: {exc}"}
+    return {"ok": True, "path": str(path), "file": path.name}
+
+
+@mcp.tool()
+async def save_lead(
+    user_id: int,
+    display_name: str,
+    dialog_id: str,
+    dialog_title: str,
+    message: str,
+) -> dict[str, Any]:
+    """Создать заявку на обучение и сохранить её отдельным JSON-файлом."""
+    try:
+        path = await lead_store.create(
+            user_id=int(user_id),
+            display_name=str(display_name),
+            dialog_id=str(dialog_id),
+            dialog_title=str(dialog_title),
+            message=str(message),
+        )
+    except (ValueError, TypeError) as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception as exc:
+        logger.exception("Не удалось создать заявку пользователя %s", user_id)
+        return {"ok": False, "error": f"Не удалось создать заявку: {exc}"}
     return {"ok": True, "path": str(path), "file": path.name}

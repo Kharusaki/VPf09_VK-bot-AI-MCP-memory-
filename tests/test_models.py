@@ -26,19 +26,21 @@ def test_dialog_round_trip_keeps_messages_and_mode() -> None:
     dialog = Dialog(
         id="abc123",
         title="Тестовый диалог",
-        mode=Mode.TEACHER,
+        mode=Mode.QUESTIONNAIRE,
         created_at=utc_now(),
         updated_at=utc_now(),
         messages=[
             _message(MessageRole.USER, "Объясни дроби"),
             _message(MessageRole.ASSISTANT, "Дробь — это часть целого."),
         ],
+        previous_mode=Mode.TEACHER,
     )
     restored = Dialog.from_dict(dialog.to_dict())
 
     assert restored.id == dialog.id
     assert restored.title == dialog.title
-    assert restored.mode is Mode.TEACHER
+    assert restored.mode is Mode.QUESTIONNAIRE
+    assert restored.previous_mode is Mode.TEACHER
     assert [message.content for message in restored.messages] == [
         "Объясни дроби",
         "Дробь — это часть целого.",
