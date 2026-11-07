@@ -58,6 +58,7 @@ class ServerSettings:
     port: int
     path: str
     data_dir: Path
+    questionnaire_dir: Path
     max_file_bytes: int
     log_level: str
 
@@ -77,6 +78,7 @@ def load_server_settings() -> ServerSettings:
         port=port,
         path=path,
         data_dir=_path("DATA_DIR", "data/users"),
+        questionnaire_dir=_path("QUESTIONNAIRE_DIR", "data/questionnaires"),
         max_file_bytes=max(10_000, _int("MAX_USER_FILE_BYTES", 5_000_000)),
         log_level=_str("LOG_LEVEL", "INFO").upper(),
     )

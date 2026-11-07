@@ -19,6 +19,8 @@ venv/
 data/users/*.json
 data/users/*.corrupt-*.json
 data/users/rag/
+data/questionnaires/
+reports/
 data/*.log
 data/*.tmp
 .vkbottle/

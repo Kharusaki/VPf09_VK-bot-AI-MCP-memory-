@@ -15,14 +15,16 @@ from dataclasses import dataclass
 
 from config.prompts import build_system_prompt
 from config.settings import Settings
+from config.texts import QUESTIONNAIRE_SAVE_ERROR_TEXT, QUESTIONNAIRE_SAVED_TEXT
 from models.enums import MessageRole, Mode
+from models.questionnaire import extract_profile, strip_json_blocks
 from services.ai_service import AIService
 from services.context_builder import ContextBuilder
 from services.dialog_service import DialogService
 from services.memory_service import MemoryService
 from services.rag_service import RAGService
 from storage.client.repository import StorageRepository
-from utils.errors import AIUnavailableError
+from utils.errors import AIUnavailableError, StorageError
 from utils.locks import KeyedLocks
 from utils.text import clean_text
 
@@ -40,6 +42,7 @@ class ChatResult:
     model: str
     fallback_used: bool
     message_count: int
+    questionnaire_file: str | None = None
 
 
 class ChatService:
@@ -97,7 +100,34 @@ class ChatService:
                 messages=context,
             )
 
-            self.memory.append(dialog, MessageRole.ASSISTANT, result.text)
+            visible_text = result.text
+            questionnaire_file: str | None = None
+            if dialog.mode is Mode.QUESTIONNAIRE:
+                visible_text, questionnaire = extract_profile(result.text)
+                if questionnaire is not None:
+                    try:
+                        saved = await self.storage.save_questionnaire(
+                            user_id=int(user_id),
+                            dialog_id=dialog.id,
+                            dialog_title=dialog.title,
+                            display_name=display_name,
+                            profile=questionnaire,
+                        )
+                        questionnaire_file = str(saved.get("file") or "")
+                        visible_text = visible_text or QUESTIONNAIRE_SAVED_TEXT
+                    except StorageError as exc:
+                        logger.error(
+                            "Не удалось сохранить анкету пользователя %s: %s",
+                            user_id,
+                            exc,
+                        )
+                        visible_text = visible_text or QUESTIONNAIRE_SAVE_ERROR_TEXT
+                else:
+                    # Модель иногда забывает обёртку или формат. Не показываем
+                    # пользователю сырой служебный блок в любом случае.
+                    visible_text = strip_json_blocks(result.text) or result.text
+
+            self.memory.append(dialog, MessageRole.ASSISTANT, visible_text)
             await self.dialogs.save(profile)
 
             logger.info(
@@ -107,14 +137,17 @@ class ChatService:
                 result.model,
                 " (резервная)" if result.fallback_used else "",
             )
+            if questionnaire_file:
+                logger.info("JSON анкеты обновлён: %s", questionnaire_file)
             return ChatResult(
-                text=result.text,
+                text=visible_text,
                 dialog_id=dialog.id,
                 dialog_title=dialog.title,
                 mode=dialog.mode,
                 model=result.model,
                 fallback_used=result.fallback_used,
                 message_count=dialog.message_count,
+                questionnaire_file=questionnaire_file,
             )
 
 

@@ -6,5 +6,9 @@ google-genai>=2.0,<3
 openai>=3.0,<4
 python-dotenv>=1.0,<2
 
+# --- PDF-анкеты (scripts/make_profile.py) ---
+jinja2>=3.1,<4
+xhtml2pdf>=0.2.16,<0.3
+
 # --- Опционально: чтение PDF для базы знаний (scripts/rag_index.py) ---
 PyPDF2>=3.0,<4

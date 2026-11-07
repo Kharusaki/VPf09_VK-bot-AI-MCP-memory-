@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Profile</title>
+  <style>
+    {{ font_css|safe }}
+    @page { size: A4; margin: 18mm 16mm; }
+    body {
+      font-family: "ReportFont", sans-serif;
+      font-size: 11pt;
+      color: #111;
+      line-height: 1.35;
+    }
+    h1 {
+      font-size: 18pt;
+      margin: 0 0 4px 0;
+      padding-bottom: 6px;
+      border-bottom: 1.5px solid #111;
+    }
+    .meta {
+      color: #555;
+      font-size: 9.5pt;
+      margin: 8px 0 20px;
+    }
+    .meta div { margin-bottom: 3px; }
+    table { width: 100%; }
+    td {
+      padding: 7px 8px;
+      vertical-align: top;
+      border-bottom: 1px solid #ddd;
+    }
+    td.label {
+      width: 32%;
+      font-weight: bold;
+      background: #f6f6f6;
+    }
+    .footer {
+      margin-top: 18px;
+      color: #777;
+      font-size: 8.5pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>Анкета ученика</h1>
+  <div class="meta">
+    <div>Дата формирования: {{ report_date }}</div>
+    {% if user_id %}<div>VK ID: {{ user_id }}</div>{% endif %}
+    {% if dialog_title %}<div>Диалог: {{ dialog_title }}</div>{% endif %}
+    {% if source_file %}<div>Источник: {{ source_file }}</div>{% endif %}
+  </div>
+
+  <table>
+    {% for label, value in rows %}
+    <tr>
+      <td class="label">{{ label }}</td>
+      <td>{{ value }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div class="footer">
+    Сформировано автоматически по диалогу с VK-ботом.
+  </div>
+</body>
+</html>

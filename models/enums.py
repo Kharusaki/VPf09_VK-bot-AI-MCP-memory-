@@ -14,6 +14,7 @@ class Mode(StrEnum):
     BUSINESS = "business"
     FRIEND = "friend"
     RAG = "rag"
+    QUESTIONNAIRE = "questionnaire"
 
     @property
     def label(self) -> str:
@@ -36,6 +37,7 @@ _MODE_LABELS: dict[Mode, str] = {
     Mode.BUSINESS: "💼 Бизнес-консультант",
     Mode.FRIEND: "😊 Дружелюбный собеседник",
     Mode.RAG: "📚 Менеджер по базе знаний",
+    Mode.QUESTIONNAIRE: "📝 Анкетирование",
 }
 
 

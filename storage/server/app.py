@@ -6,11 +6,13 @@ from mcp.server.fastmcp import FastMCP
 
 from .config import load_server_settings
 from .json_store import JsonUserStore
+from .questionnaire_store import QuestionnaireStore
 from .repository import UserRepository
 
 settings = load_server_settings()
 store = JsonUserStore(settings.data_dir, settings.max_file_bytes)
 repository = UserRepository(store)
+questionnaire_store = QuestionnaireStore(settings.questionnaire_dir)
 
 # stateless_http + json_response: сервер не хранит сессии, ответы идут обычным
 # JSON. Для локального бота это проще и надёжнее, чем SSE-сессии.

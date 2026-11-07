@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import socket
 import subprocess
@@ -56,6 +57,7 @@ def server(tmp_path: Path):
             "MCP_PORT": str(port),
             "MCP_PATH": "/mcp",
             "DATA_DIR": str(data_dir),
+            "QUESTIONNAIRE_DIR": str(tmp_path / "questionnaires"),
             "LOG_LEVEL": "WARNING",
             "PYTHONUNBUFFERED": "1",
         }
@@ -141,6 +143,23 @@ async def test_mcp_storage_end_to_end(server) -> None:
         stats = await repository.stats()
         assert stats["ok"] is True
         assert stats["users"] == 1
+
+        saved = await repository.save_questionnaire(
+            user_id=777,
+            dialog_id="dialog-1",
+            dialog_title="Анкета",
+            display_name="Тестовый пользователь",
+            profile={"student_name": "Артём Соколов", "current_level": "A2"},
+        )
+        assert saved["ok"] is True
+        questionnaire_path = Path(saved["path"])
+        assert questionnaire_path.exists()
+        questionnaire = json.loads(questionnaire_path.read_text(encoding="utf-8"))
+        assert questionnaire["student_name"] == "Артём Соколов"
+        assert questionnaire["current_level"] == "A2"
+        assert questionnaire["contact_info"] == "не указано"
+        assert questionnaire["user_id"] == 777
+        assert questionnaire["dialog_title"] == "Анкета"
 
         await repository.delete_user(777)
         assert await repository.load_user(777) is None

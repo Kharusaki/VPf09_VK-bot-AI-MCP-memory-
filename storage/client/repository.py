@@ -48,6 +48,26 @@ class StorageRepository:
     async def delete_user(self, user_id: int) -> None:
         await self.client.call_tool("delete_user", {"user_id": int(user_id)})
 
+    async def save_questionnaire(
+        self,
+        user_id: int,
+        dialog_id: str,
+        dialog_title: str,
+        display_name: str,
+        profile: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Сохранить анкету отдельным JSON-файлом для PDF-генератора."""
+        return await self.client.call_tool(
+            "save_questionnaire",
+            {
+                "user_id": int(user_id),
+                "dialog_id": str(dialog_id),
+                "dialog_title": str(dialog_title),
+                "display_name": str(display_name),
+                "profile": profile,
+            },
+        )
+
     async def list_user_ids(self) -> list[int]:
         payload = await self.client.call_tool("list_users", {})
         raw = payload.get("user_ids")

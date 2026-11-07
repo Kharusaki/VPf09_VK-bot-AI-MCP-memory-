@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .app import mcp, repository
+from .app import mcp, questionnaire_store, repository
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +73,28 @@ async def storage_stats() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Не удалось получить статистику хранилища")
         return {"ok": False, "error": f"Не удалось получить статистику: {exc}"}
+
+
+@mcp.tool()
+async def save_questionnaire(
+    user_id: int,
+    dialog_id: str,
+    dialog_title: str,
+    display_name: str,
+    profile: dict[str, Any],
+) -> dict[str, Any]:
+    """Сохранить JSON-анкету отдельно от профиля и истории диалога."""
+    try:
+        path = await questionnaire_store.save(
+            user_id=int(user_id),
+            dialog_id=str(dialog_id),
+            dialog_title=str(dialog_title),
+            display_name=str(display_name),
+            profile=profile,
+        )
+    except (ValueError, TypeError) as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception as exc:
+        logger.exception("Не удалось сохранить анкету пользователя %s", user_id)
+        return {"ok": False, "error": f"Не удалось сохранить анкету: {exc}"}
+    return {"ok": True, "path": str(path), "file": path.name}
